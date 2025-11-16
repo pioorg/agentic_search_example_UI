@@ -19,10 +19,10 @@ GCP_PSE_ID=<GCP PSE ID>
 AZURE_OPENAI_SYSTEM_PROMPT="You are a helpful assistant. Be as concise and efficient as possible. Convey maximum meaning in fewest words possible."
 
 
-AZURE_OPENAI_ENDPOINT=<AZURE ENDPOINT>
-AZURE_OPENAI_API_VERSION=<AZURE API VERDSION>
+AZURE_OPENAI_ENDPOINT='<AZURE ENDPOINT>'
+AZURE_OPENAI_API_VERSION='<AZURE API VERSION>'
 AZURE_OPENAI_API_KEY=<AZURE API KEY>
-AZURE_OPENAI_MODEL="gpt-4o-mini"
+AZURE_OPENAI_MODEL='gpt-4o-mini'
 ```
 
 This code requires a connection to the Google Custom Search API and to an Elastic Cloud deployment. The agent's tools are API calls to either the Google CSAPI or to specific Elasticsearch indices - The latter is a semantic_search over indices containing PDF files processed using the `semantic_text` datatype. 
@@ -191,23 +191,12 @@ bulk_upload_to_elasticsearch([i.to_dict() for i in list(documents)],
 
 ## Semantic Data Embedding and Chunking 
 
-In my Elastic Cloud DevTools console, I first deploy the [ELSER v2](https://www.elastic.co/docs/explore-analyze/machine-learning/nlp/ml-nlp-elser) model using the [Elastic inference API](https://www.elastic.co/docs/api/doc/elasticsearch/group/endpoint-inference). 
+On Elastic Cloud Serverless, the [ELSER v2](https://www.elastic.co/docs/explore-analyze/machine-learning/nlp/ml-nlp-elser) endpoint is pre-provisioned. You do not need to create a custom inference with your own id. Instead, use the built-in inference id ".elser-2-elasticsearch" (service "elasticsearch", model_id ".elser_model_2_linux-x86_64"). You can confirm it exists via DevTools:
 
-```bash 
-PUT _inference/sparse_embedding/elser_v2
-{
-  "service": "elasticsearch",
-  "service_settings": {
-    "num_allocations": 1,
-    "num_threads": 8,
-    "model_id": ".elser_model_2_linux-x86_64"
-  },
-  "chunking_settings": {
-    "strategy": "sentence",
-    "max_chunk_size": 250,
-    "sentence_overlap": 1
-  }
-}
+```bash
+GET _inference
+
+GET _inference/sparse_embedding/.elser-2-elasticsearch
 ```
 I then define a simple pipeline. Each document stores the text of a page from the dive manual in the `body` field, so I copy the contents of `body` to a field called `semantic_content`.
 
@@ -218,9 +207,8 @@ PUT _ingest/pipeline/diving_pipeline
     {
       "set": {
         "field": "semantic_content",
-        
-        "copy_from": "body",
-        "if": "ctx.body != null"
+        "ignore_empty_value": true,
+        "copy_from": "body"
       }
     }
   ]
@@ -236,7 +224,7 @@ PUT us_navy_dive_manual
     "properties": {
       "semantic_content": {
         "type": "semantic_text",
-        "inference_id": "elser_v2"
+        "inference_id": ".elser-2-elasticsearch"
       }
     }
   }
@@ -258,4 +246,16 @@ POST _reindex?slices=auto&wait_for_completion=false
   },
   "conflicts": "proceed"
 }
+```
+
+Tip: The helper script `setup_indices.py` automates the ingest pipeline and index creation for you and uses the preconfigured inference id `.elser-2-elasticsearch` by default:
+
+```
+python setup_indices.py
+```
+
+You can also use `seed_data.py` to load sample data into the indices:
+
+```
+python seed_data.py
 ```

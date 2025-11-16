@@ -176,7 +176,7 @@ def initialize_agent():
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
         api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-        deployment_name=os.getenv("AZURE_OPENAI_MODEL"),
+        azure_deployment=os.getenv("AZURE_OPENAI_MODEL"),
         streaming=False
     )
 
