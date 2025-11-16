@@ -136,14 +136,14 @@ def initialize_agent():
             response = self.client.search(
                 index=index,
                 body={
+                    "size": size,
                     "query": {
                         "semantic": {
                             "field": "semantic_content",
                             "query": query
                         }
-                    }     
-                },
-                size=size
+                    }
+                }
             )
             return "\n".join([hit["_source"].get("body", "No Body") 
                              for hit in response["hits"]["hits"]])
