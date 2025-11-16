@@ -8,3 +8,11 @@ google-cloud-vision==3.9.0
 googleapis-common-protos==1.65.0
 elasticsearch==8.17.1
 langchain==0.3.15
+langchain-openai<1.0
+python-dotenv>=1.0
+
+# Optional ingestion dependencies
+# Uncomment the lines below if you also want to run the ingestion example from the README.
+# They are not required for running the Streamlit UI.
+# tqdm==4.66.4
+# llama-index
